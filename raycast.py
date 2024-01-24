@@ -80,10 +80,13 @@ def movements():
         coords[0]+=dx
     if (int(coords[0]),int(coords[1]+dy)) not in objects:
         coords[1]+=dy
-    if (int(coords[0]+dx),int(coords[1])) not in objects: # do not update coords if I am heading into a wall
-        coords[0]+=dx
-    if (int(coords[0]),int(coords[1]+dy)) not in objects:
-        coords[1]+=dy
+    if MAP[int(coords[1])][int(coords[0]+dx)] == 3: # do not update coords if I am heading into a wall
+        objects.pop((int(coords[0]+dx),int(coords[1])))
+        MAP[int(coords[1])][int(coords[0]+dx)] = 0
+    if MAP[int(coords[1]+dy)][int(coords[0])] == 3:
+        objects.pop((int(coords[0]),int(coords[1]+dy)))
+        MAP[int(coords[1]+dy)][int(coords[0])] = 0
+
 
 def raycast():
     ray_angle=(angle-(fov/2))+0.000001 # error never makes this zero
