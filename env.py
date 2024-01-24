@@ -12,7 +12,7 @@ class CustomEnv(gym.Env):
         super(CustomEnv, self).__init__()
 
         # Define observation space (assuming RGB images)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(height, width, 3), dtype=int)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(height, width, 3), dtype=np.float32)
 
         # Define action space (WASD controls)
         self.action_space = spaces.Discrete(4)
@@ -71,7 +71,7 @@ class CustomEnv(gym.Env):
 
     def _get_state(self):
         game_state = pygame.surfarray.array3d(self.root)
-        return np.array(game_state)
+        return np.array(game_state, dtype=np.float32)
 
     def step(self, action):
         """
@@ -94,20 +94,20 @@ class CustomEnv(gym.Env):
     def close(self):
         pygame.quit()
 
-    def perform_action(self):
+    def perform_action(self, action):
         mx = self.move * math.cos(self.angle)
         my = self.move * math.sin(self.angle)
         dx, dy = 0, 0
 
-        if self.action == 0:
+        if action == 0:
             dx += mx
             dy += my
-        if self.action == 1:
+        if action == 1:
             dx += -mx
             dy += -my
-        if self.action == 2:
+        if action == 2:
             self.angle += -self.rotate * 0.002
-        if self.action == 3:
+        if action == 3:
             self.angle += self.rotate * 0.002
 
         if (int(self.coords[0] + dx), int(self.coords[1])) not in self.objects:
@@ -121,7 +121,7 @@ class CustomEnv(gym.Env):
             self.objects.pop((int(self.coords[0]),int(self.coords[1]+dy)))
             self.MAP[int(self.coords[1]+dy)][int(self.coords[0])] = 0
 
-    def run_game_loop(self):
+    def run_game_loop(self, action):
         while not self.gameover:
             self.root.fill('black')
 
@@ -131,7 +131,7 @@ class CustomEnv(gym.Env):
 
             self.setup_map()
             self.raycast()
-            self.perform_action()
+            self.perform_action(action)
 
 
             pygame.display.set_caption(str(self.clock.get_fps() // 1))
@@ -239,6 +239,3 @@ class CustomEnv(gym.Env):
             else:
                 pygame.draw.rect(self.root,list(map(lambda x:x//2,self.colors[color])),(ray*self.scale,(height//2)-projection_height//2,self.scale,projection_height))
             ray_angle+=self.delta_angle
-
-env = CustomEnv()
-env.run_game_loop()

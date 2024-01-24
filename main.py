@@ -10,12 +10,6 @@ pygame.mouse.set_visible(False)
 gameover=False
 clock=pygame.time.Clock()
 
-def fetch_game_state():
-    game_state = pygame.surfarray.array3d(root)
-    return game_state
-def perform_action(action):
-    pass
-
 while not gameover:
     root.fill('black')
     for i in pygame.event.get():

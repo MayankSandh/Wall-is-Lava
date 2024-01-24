@@ -25,7 +25,7 @@ class QLearningAgent:
         # For simplicity, let's use a random action for now
         return np.random.choice(self.action_size)
 
-    def train(self, state, action, reward, next_state, done):
+    def train(self, state, action, reward, next_state, done, gamma):
         # Q-learning update rule
         target = reward
         if not done:

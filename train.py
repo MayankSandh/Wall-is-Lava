@@ -22,16 +22,14 @@ for episode in range(num_episodes):
 
     while True:
         action = agent.act(state)
-        env.action = action
-        # env.run_game_loop(action)  # Use perform_action instead of env.step
         next_state, reward, done, _ = env.step(action)
         next_state = np.reshape(next_state, (1, height, width, 3))
 
-        agent.train(state, action, reward, next_state, done)
+        agent.train(state, action, reward, next_state, done, gamma)
 
         total_reward += reward
         state = next_state
-
+        env.run_game_loop(action)
         if done:
             break
 
