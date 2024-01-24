@@ -42,7 +42,7 @@ def setup_map(root):
     pygame.draw.rect(root,(50,50,50),(0,height//2,width,height)) # default background
     pygame.draw.rect(root,(30,30,30),(0,0,width,height//2)) # default background
 
-def movements():
+def movements(root):
     global angle
     mx=move*math.cos(angle)
     my=move*math.sin(angle)
@@ -50,6 +50,7 @@ def movements():
 
     pressed=pygame.key.get_pressed() # controlls 
     if pressed[pygame.K_w]:
+        print(pygame.surfarray.array3d(root))
         dx+=mx
         dy+=my
     if pressed[pygame.K_s]:

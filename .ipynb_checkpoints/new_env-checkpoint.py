@@ -1,29 +1,71 @@
-# custom_env.py
 import gym
 from gym import spaces
 import numpy as np
-from graphics import setup_map, raycast, movements
-import pygame
 import math
 from copy import deepcopy
+import pygame
+
 width,height=1200,600
+
+def color_ratio(data, color):
+    color_mask = np.all(data == color, axis=-1)
+    percentage = (np.sum(color_mask) / np.prod(color_mask.shape)) * 100
+
+
 class CustomEnv(gym.Env):
     def __init__(self):
-        # super(CustomEnv, self).__init__()
-
-        # Define observation space (assuming RGB images)
+        super(CustomEnv, self).__init__()
+        self.render_mode = None
+        self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=0, high=255, shape=(height, width, 3), dtype=np.float32)
 
-        # Define action space (WASD controls)
-        self.action_space = spaces.Discrete(4)
+        self.done = False
 
-        # Other initialization logic goes here
-        pygame.init()
-        self.root = pygame.display.set_mode((width, height))
-        pygame.mouse.set_visible(False)
+        """
+        if guy dead:
+            self.done = True
+        """
 
-        self.gameover = False
-        self.clock = pygame.time.Clock()
+
+
+    def step(self, action):
+        self.action = action
+
+        game_state = pygame.surfarray.array3d(self.root)
+        self.observation = np.array(game_state, dtype=np.float32)
+
+        self.reward = 0
+        self.score = 0
+        self.prev_score = 0
+        self.time_passed = 0
+        # self.time_limit = 60
+
+        # If I account for character death
+        if self.done:
+            reward_a = -100
+        else:
+            reward_a = 0
+
+        GREEN = [0,255,0]
+        GREEN_LOW = [0,127,0]
+        RED = [255, 0, 0]
+        RED_LOW = [127, 0, 0]
+
+        green_ratio = color_ratio(game_state, GREEN) + color_ratio(game_state, GREEN_LOW)
+        red_ratio = color_ratio(game_state, RED) + color_ratio(game_state, RED_LOW)
+        # touching green walls
+
+        # negative award for red walls intensity
+        self.reward -= red_ratio/10
+        # positive wall for green wall intensity
+        self.reward += green_ratio
+
+        self.info = {}
+        if self.render_mode == 'human':
+            self.render()
+        return self.observation, self.reward, self.done, self.info
+    
+    def reset(self, action):
         self.MAP=[
             [1,1,1,1,1,1,1,1,1,1,1,1], # top left is the origin and facing east
             [1,0,0,0,0,0,0,0,0,0,0,1],
@@ -60,69 +102,16 @@ class CustomEnv(gym.Env):
         self.coords_reset = deepcopy(self.coords)
         self.objects_reset = deepcopy(self.objects)
         self.action = 0
-
-    def reset(self):
-        self.MAP = deepcopy(self.MAP_reset)
-        self.angle = deepcopy(self.angle_reset)
-        self.objects = deepcopy(self.objects_reset)
-        self.coords = deepcopy(self.coords_reset)
-        self.gameover = False
-        return self._get_state()
-
-    def _get_state(self):
+        
+        
         game_state = pygame.surfarray.array3d(self.root)
-        return np.array(game_state, dtype=np.float32)
+        self.observation = np.array(game_state, dtype=np.
+        float32)
+        if self.render_mode == 'human':
+            self.render()
+        return self.observation
 
-    def step(self, action):
-        """
-        Apply the action to the game and return the next state, reward, done, and info.
-        """
-        self.perform_action(action)
-
-        next_state = self._get_state()
-
-        # Example: Calculate reward, done, and other info based on your game logic
-        reward = 0
-        done = False
-        info = {}
-
-        return next_state, reward, done, info
-
-    def render(self):
-        pygame.display.flip()
-
-    def close(self):
-        pygame.quit()
-
-    def perform_action(self, action):
-        mx = self.move * math.cos(self.angle)
-        my = self.move * math.sin(self.angle)
-        dx, dy = 0, 0
-
-        if action == 0:
-            dx += mx
-            dy += my
-        if action == 1:
-            dx += -mx
-            dy += -my
-        if action == 2:
-            self.angle += -self.rotate * 0.002
-        if action == 3:
-            self.angle += self.rotate * 0.002
-
-        if (int(self.coords[0] + dx), int(self.coords[1])) not in self.objects:
-            self.coords[0] += dx
-        if (int(self.coords[0]), int(self.coords[1] + dy)) not in self.objects:
-            self.coords[1] += dy
-        if self.MAP[int(self.coords[1])][int(self.coords[0]+dx)] == 3: # do not update coords if I am heading into a wall
-            self.objects.pop((int(self.coords[0]+dx),int(self.coords[1])))
-            self.MAP[int(self.coords[1])][int(self.coords[0]+dx)] = 0
-        if self.MAP[int(self.coords[1]+dy)][int(self.coords[0])] == 3:
-            self.objects.pop((int(self.coords[0]),int(self.coords[1]+dy)))
-            self.MAP[int(self.coords[1]+dy)][int(self.coords[0])] = 0
-
-    def run_game_loop(self, action):
-        while not self.gameover:
+    def render(self, render_mode = 'human'):
             self.root.fill('black')
 
             for event in pygame.event.get():
@@ -131,13 +120,17 @@ class CustomEnv(gym.Env):
 
             self.setup_map()
             self.raycast()
-            self.perform_action(action)
+            self.perform_action()
 
 
             pygame.display.set_caption(str(self.clock.get_fps() // 1))
 
             self.clock.tick(60)
             pygame.display.update()
+
+            """
+            if game ded:
+                sleep for (0.5 seconds)"""
 
     def movements(self):
         mx = self.move * math.cos(self.angle)
@@ -239,3 +232,32 @@ class CustomEnv(gym.Env):
             else:
                 pygame.draw.rect(self.root,list(map(lambda x:x//2,self.colors[color])),(ray*self.scale,(height//2)-projection_height//2,self.scale,projection_height))
             ray_angle+=self.delta_angle
+    def perform_action(self):
+        mx = self.move * math.cos(self.angle)
+        my = self.move * math.sin(self.angle)
+        dx, dy = 0, 0
+
+        if self.action == 0:
+            dx += mx
+            dy += my
+        if self.action == 1:
+            dx += -mx
+            dy += -my
+        if self.action == 2:
+            self.angle += -self.rotate * 0.002
+        if self.action == 3:
+            self.angle += self.rotate * 0.002
+
+        if (int(self.coords[0] + dx), int(self.coords[1])) not in self.objects:
+            self.coords[0] += dx
+        if (int(self.coords[0]), int(self.coords[1] + dy)) not in self.objects:
+            self.coords[1] += dy
+        if self.MAP[int(self.coords[1])][int(self.coords[0]+dx)] == 3: # do not update coords if I am heading into a wall
+            self.objects.pop((int(self.coords[0]+dx),int(self.coords[1])))
+            self.MAP[int(self.coords[1])][int(self.coords[0]+dx)] = 0
+        if self.MAP[int(self.coords[1]+dy)][int(self.coords[0])] == 3:
+            self.objects.pop((int(self.coords[0]),int(self.coords[1]+dy)))
+            self.MAP[int(self.coords[1]+dy)][int(self.coords[0])] = 0
+
+    def close(self):
+        pygame.quit()

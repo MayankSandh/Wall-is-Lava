@@ -21,7 +21,7 @@ while not gameover:
 
     setup_map(root)
     raycast(root)
-    movements()
+    movements(root)
 
     pygame.display.set_caption(str(clock.get_fps()//1))
 
