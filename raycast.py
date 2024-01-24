@@ -18,35 +18,35 @@ clock=pygame.time.Clock()
 
 MAP=[
     [1,1,1,1,1,1,1,1,1,1,1,1], # top left is the origin and facing east
-    [1,0,0,0,3,0,0,0,3,0,0,1],
-    [1,0,0,0,0,0,1,1,1,3,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,4,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,2,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,3,0,0,0,0,0,0,3,0,1],
+    [1,0,0,0,0,0,3,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,1],
     [1,1,1,1,1,1,1,1,1,1,1,1]
 ]
 
-coords=[5.5,1.5] # This is the starting position
-angle=0
-fov=math.pi/3
-max_depth=10
-number_of_rays=width//2
-delta_angle=fov/number_of_rays
+coords=[1.5,1.5] 
+angle=0 # initial angle (starts from east)
+fov=math.pi/3 # field of view
+max_depth=10 # ray depth
+number_of_rays=width # resolution / number of rays
+delta_angle=fov/number_of_rays # angle between each ray
 
-scale=width//number_of_rays
+scale=width//number_of_rays # again, a factor of resolution
 
-screen_distance=(width/2)/math.tan(fov/2)
+screen_distance=(width/2)/math.tan(fov/2) # screen distance
 
-move=0.060
-rotate=0.050
+move=0.060 # step size
+rotate=0.050 # rotation step
 
-objects={}
-colors={1:(255,0,0),2:(0,0,255),3:(0,255,0),4:(255,0,255)} # 1 IS READ
+objects={} # objects tuple, later keeps the walls location
+colors={1:(255,0,0),2:(0,0,255),3:(0,255,0),4:(255,0,255)} # 1: red, 3: green
 # colors={1:(0,255,255),2:(0,0,255),3:(0,255,0),4:(255,0,255)}
 
 def setup_map():
@@ -55,8 +55,8 @@ def setup_map():
             if MAP[i][j]:
                 objects[(j,i)]=MAP[i][j]
 
-    pygame.draw.rect(root,(50,50,50),(0,height//2,width,height))
-    pygame.draw.rect(root,(30,30,30),(0,0,width,height//2))
+    pygame.draw.rect(root,(50,50,50),(0,height//2,width,height)) # default background
+    pygame.draw.rect(root,(30,30,30),(0,0,width,height//2)) # default background
 
 def movements():
     global angle
@@ -64,7 +64,7 @@ def movements():
     my=move*math.sin(angle)
     dx,dy=0,0
 
-    pressed=pygame.key.get_pressed()
+    pressed=pygame.key.get_pressed() # controlls 
     if pressed[pygame.K_w]:
         dx+=mx
         dy+=my
@@ -76,15 +76,18 @@ def movements():
     if pressed[pygame.K_d]:
         angle+=20*0.002
 
-    if (int(coords[0]+dx),int(coords[1])) not in objects:
+    if (int(coords[0]+dx),int(coords[1])) not in objects: # do not update coords if I am heading into a wall
+        coords[0]+=dx
+    if (int(coords[0]),int(coords[1]+dy)) not in objects:
+        coords[1]+=dy
+    if (int(coords[0]+dx),int(coords[1])) not in objects: # do not update coords if I am heading into a wall
         coords[0]+=dx
     if (int(coords[0]),int(coords[1]+dy)) not in objects:
         coords[1]+=dy
 
 def raycast():
-
-    ray_angle=(angle-(fov/2))+0.000001
-    color=0
+    ray_angle=(angle-(fov/2))+0.000001 # error never makes this zero
+    color=0 
 
     for ray in range(number_of_rays):
 
