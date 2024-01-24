@@ -1,21 +1,6 @@
-import pygame
 import math
-import time
-
-pygame.init()
-
+import pygame
 width,height=1200,600
-
-root=pygame.display.set_mode((width,height))
-
-pygame.mouse.set_visible(False)
-
-GRID=100
-
-gameover=False
-
-clock=pygame.time.Clock()
-
 MAP=[
     [1,1,1,1,1,1,1,1,1,1,1,1], # top left is the origin and facing east
     [1,0,0,0,0,0,0,0,0,0,0,1],
@@ -43,18 +28,17 @@ scale=width//number_of_rays # again, a factor of resolution
 screen_distance=(width/2)/math.tan(fov/2) # screen distance
 
 move=0.060 # step size
-rotate=0.050 # rotation step
+rotate=10  # rotation step
 
 objects={} # objects tuple, later keeps the walls location
 colors={1:(255,0,0),2:(0,0,255),3:(0,255,0),4:(255,0,255)} # 1: red, 3: green
-# colors={1:(0,255,255),2:(0,0,255),3:(0,255,0),4:(255,0,255)}
 
-def setup_map():
+
+def setup_map(root):
     for i in range(len(MAP)):
         for j in range(len(MAP[i])):
             if MAP[i][j]:
                 objects[(j,i)]=MAP[i][j]
-
     pygame.draw.rect(root,(50,50,50),(0,height//2,width,height)) # default background
     pygame.draw.rect(root,(30,30,30),(0,0,width,height//2)) # default background
 
@@ -72,9 +56,9 @@ def movements():
         dx+=-mx
         dy+=-my
     if pressed[pygame.K_a]:
-        angle+=-20*0.002
+        angle+=-rotate*0.002
     if pressed[pygame.K_d]:
-        angle+=20*0.002
+        angle+=rotate*0.002
 
     if (int(coords[0]+dx),int(coords[1])) not in objects: # do not update coords if I am heading into a wall
         coords[0]+=dx
@@ -87,8 +71,7 @@ def movements():
         objects.pop((int(coords[0]),int(coords[1]+dy)))
         MAP[int(coords[1]+dy)][int(coords[0])] = 0
 
-
-def raycast():
+def raycast(root):
     ray_angle=(angle-(fov/2))+0.000001 # error never makes this zero
     color=0 
 
@@ -140,8 +123,6 @@ def raycast():
             color=objects[tile_vertical]
             side=1
 
-        # pygame.draw.line(root,(255,0,0),(GRID*coords[0],GRID*coords[1]),((GRID*coords[0])+(GRID*depth*cos_angle),(GRID*coords[1])+(GRID*depth*sin_angle)),2)
-
         #remove fish-eye effect
         depth=depth*(math.cos(angle-ray_angle))
 
@@ -156,22 +137,3 @@ def raycast():
 
 
         ray_angle+=delta_angle
-
-while not gameover:
-    root.fill('black')
-
-    for i in pygame.event.get():
-        if i.type == pygame.QUIT:
-            gameover=True
-        if i.type == pygame.KEYUP:
-            if i.key==pygame.K_q:
-                gameover=True
-
-    setup_map()
-    raycast()
-    movements()
-
-    pygame.display.set_caption(str(clock.get_fps()//1))
-
-    clock.tick(60)
-    pygame.display.update()
