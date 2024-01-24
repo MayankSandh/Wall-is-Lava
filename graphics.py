@@ -134,6 +134,4 @@ def raycast(root):
             pygame.draw.rect(root,colors[color],(ray*scale,(height//2)-projection_height//2,scale,projection_height))
         else:
             pygame.draw.rect(root,list(map(lambda x:x//2,colors[color])),(ray*scale,(height//2)-projection_height//2,scale,projection_height))
-
-
         ray_angle+=delta_angle
